@@ -75,5 +75,12 @@ function getNearestColor(palette, value){
 // Imágenes a restar (imageA y imageB) y el retorno en result
 function substraction(imageA,imageB,result) 
 {
-    // completar
+    for (var i = 0; i < imageA.data.length; i+=4) {
+    	var valueAlpha = imageA.data[i+3]
+
+    	result.data[i] = Math.abs(valueAlpha * imageA.data[i] -   imageB.data[i]);
+    	result.data[i+1] = Math.abs(valueAlpha * imageA.data[i+1] - imageB.data[i+1]);
+    	result.data[i+2] = Math.abs(valueAlpha * imageA.data[i+2] - imageB.data[i+2]);
+    	result.data[i+3] = Math.abs(valueAlpha * imageA.data[i+2] - imageB.data[i+2]);
+    }
 }
