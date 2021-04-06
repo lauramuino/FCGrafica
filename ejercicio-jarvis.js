@@ -3,7 +3,7 @@
 // Factor indica la cantidad de intensidades permitidas (sin contar el 0)
 const channels = 4;
 
-function dither(image, factor) {
+function dither2(image, factor) {
 
 	for (var x = 0; x < image.height; x++) {
 		for (var y = 0; y < image.width; y++) {
@@ -11,17 +11,43 @@ function dither(image, factor) {
 			var palette = calculatePalette(factor);
 			quant_error = updatePixel(image, x, y, palette);
 
-			if (x + 1 < image.height) {
-				ditherPixel(image, x + 1, y, quant_error, 5 / 16);
-			}
-			if (y > 0 && x + 1 < image.height) {
-				ditherPixel(image, x + 1, y - 1, quant_error, 3 / 16);
-			}
 			if (y + 1 < image.width) {
-				ditherPixel(image, x, y + 1, quant_error, 7 / 16);
+				ditherPixel(image, x, y + 1, quant_error, 7 / 48);
 			}
-			if (x + 1 < image.height && y + 1 < image.width) {
-				ditherPixel(image, x + 1, y + 1, quant_error, 1 / 16);
+			if (y + 2 < image.width) {
+				ditherPixel(image, x, y + 2, quant_error, 5 / 48);
+			}
+
+			if (x + 1 < image.height) {
+				ditherPixel(image, x + 1, y, quant_error, 7 / 48);
+				if (y + 1 < image.width) {
+					ditherPixel(image, x + 1, y + 1, quant_error, 5 / 48);
+				}
+				if (y + 2 < image.width) {
+					ditherPixel(image, x + 1, y + 2, quant_error, 3 / 48);
+				}
+				if (y > 1) {
+					ditherPixel(image, x + 1, y - 2, quant_error, 3 / 48);
+				}
+				if (y > 0) {
+					ditherPixel(image, x + 1, y - 1, quant_error, 5 / 48);
+				}
+			}
+
+			if (x + 2 < image.height) {
+				ditherPixel(image, x + 2, y, quant_error, 5 / 48);
+				if (y + 1 < image.width) {
+					ditherPixel(image, x + 2, y + 1, quant_error, 3 / 48);
+				}
+				if (y + 2 < image.width) {
+					ditherPixel(image, x + 2, y + 2, quant_error, 1 / 48);
+				}
+				if (y > 1) {
+					ditherPixel(image, x + 2, y - 2, quant_error, 1 / 48);
+				}
+				if (y > 0) {
+					ditherPixel(image, x + 2, y - 1, quant_error, 3 / 48);
+				}
 			}
 		}
 	}
