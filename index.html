@@ -5,14 +5,15 @@
     <title>FCG-2021 - TP1</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="../resuelto/assets/bootstrap.min.css" rel="stylesheet"> 
+    <link href="./assets/bootstrap.min.css" rel="stylesheet"> 
 
     <!-- Custom styles for this template -->
     <link href="style.css" rel="stylesheet">
 
     <!-- del proyecto -->
-    <script type="text/javascript" id="includedscript" src="ejercicio.js"></script>
-    <script type="text/javascript" id="includedscript" src="tp1.js"></script>
+    <script type="text/javascript" id="includedscript0" src="ejercicio.js"></script>
+    <script type="text/javascript" id="includedscript1" src="ejercicio-jarvis.js"></script>
+    <script type="text/javascript" id="includedscript2" src="tp1.js"></script>
 
   </head>
 
@@ -26,7 +27,7 @@
           <input type="number" class="form-control" id="inputlevels" value="1" min="1" max="20" step="1"/>
         </div> 
       </div>
-      <div class="row" style="width:25% ;height:auto;">
+      <div class="row">
         <div class="col-md-4" id="inputImage">
           <canvas id="canvasinput"/>
         </div>
@@ -34,7 +35,13 @@
           <canvas id="canvasresult"/>
         </div>
         <div class="col-md-4">
+          <canvas id="canvasresultJarvis"/>
+        </div>
+        <div class="col-md-4">
           <canvas id="canvasdiff"/>
+        </div>
+        <div class="col-md-4">
+          <canvas id="canvasdiffJarvis"/>
         </div>
       </div>
   </body>

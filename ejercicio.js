@@ -66,9 +66,9 @@ function calculatePalette(factor) {
 }
 
 function getNearestColor(palette, value) {
-	return palette.reduce((a, b) => {
-		return Math.abs(b - value) < Math.abs(a - value) ? b : a;
-	})
+	return palette.reduce(function(prev, curr) {
+		return (Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+	});
 }
 
 
@@ -76,11 +76,8 @@ function getNearestColor(palette, value) {
 function substraction(imageA,imageB,result) 
 {
     for (var i = 0; i < imageA.data.length; i+=4) {
-    	var valueAlpha = imageA.data[i+3]
-
-    	result.data[i] = Math.abs(valueAlpha * imageA.data[i] -   imageB.data[i]);
-    	result.data[i+1] = Math.abs(valueAlpha * imageA.data[i+1] - imageB.data[i+1]);
-    	result.data[i+2] = Math.abs(valueAlpha * imageA.data[i+2] - imageB.data[i+2]);
-    	result.data[i+3] = Math.abs(valueAlpha * imageA.data[i+2] - imageB.data[i+2]);
+    	result.data[i]   = Math.abs(imageA.data[i]   - imageB.data[i])  ;
+    	result.data[i+1] = Math.abs(imageA.data[i+1] - imageB.data[i+1]);
+    	result.data[i+2] = Math.abs(imageA.data[i+2] - imageB.data[i+2]);
     }
 }
