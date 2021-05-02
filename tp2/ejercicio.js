@@ -12,8 +12,9 @@
 function BuildTransform( positionX, positionY, rotation, scale )
 {
 
-	var matRot = Array( Math.cos(rotation), -Math.sin(rotation), 0,
-						Math.sin(rotation), Math.cos(rotation), 0,
+	radianRotation = rotation * Math.PI/180
+	var matRot = Array( Math.cos(radianRotation), Math.sin(radianRotation), 0,
+						-Math.sin(radianRotation), Math.cos(radianRotation), 0,
 						0,              0,             1);
 
 	var matTras = Array(1, 0, 0,
@@ -24,7 +25,7 @@ function BuildTransform( positionX, positionY, rotation, scale )
 						 0, scale, 0,
 						 0, 0, 1);
 
-	var sScale = ComposeTransforms(matRot, (matTras));  //porque a la traslacion no hay que expresarla en column major?
+	var sScale = ComposeTransforms(matRot, matTras);
 	var cScale = ComposeTransforms(transpose(matScale), sScale);
 	return cScale;
 }
