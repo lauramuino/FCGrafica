@@ -74,7 +74,10 @@ var curvesVS = `
 	uniform vec2 p3;
 	void main()
 	{ 
-		gl_Position = mvp * vec4(0,0,0,1);
+		float t2 = t*t;
+		float t3 = t2*t;
+		
+		gl_Position = vec4(1, t, t2, t3) * mvp * vec4(p0, p1, p2, p3);
 	}
 `;
 //segundo 53:10 agregar vcolor = clr; ver el video para completar las declaraciones
