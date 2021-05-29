@@ -33,7 +33,10 @@ class CurveDrawer
 	setViewport( width, height )
 	{
 		// [Completar] Matriz de transformación.
-		var matrix = [ 1.0, 0.0, 0.0, 0.0,  -3.0, 3.0, 0.0, 0.0,  3.0, -6.0, 3.0, 0.0,  -1.0, 3.0, -3.0, 1.0 ];
+		var matrix = [ 2/width, 0,        0, 0,  
+			0,      -2/height, 0, 0, 
+			0,       0,        1, 0, 
+		   -1,       1,        0, 1 ];
 
 		// [Completar] Binding del programa y seteo de la variable uniforme para la matriz.
 		gl.useProgram( this.prog );
@@ -47,15 +50,24 @@ class CurveDrawer
 		// [Completar] Pueden acceder a las coordenadas de los puntos de control consultando el arreglo pt[]:
 		// var x = pt[i].getAttribute("cx");
 		// var y = pt[i].getAttribute("cy");
+
+		gl.useProgram( this.prog );
+		gl.uniform2f(this.p0, pt[0].getAttribute("cx"), pt[0].getAttribute("cy"));
+		gl.uniform2f(this.p1, pt[1].getAttribute("cx"), pt[1].getAttribute("cy"));
+		gl.uniform2f(this.p2, pt[2].getAttribute("cx"), pt[2].getAttribute("cy"));
+		gl.uniform2f(this.p3, pt[3].getAttribute("cx"), pt[3].getAttribute("cy"));
 	}
 
 	draw()
 	{
 		// [Completar] Dibujamos la curva como una LINE_STRIP
 		// [Completar] No se olviden de hacer el binding del programa y de habilitar los atributos de los vértices
-		gl.useProgram( this.prog );		
-		gl.vertexAttribPointer( this.t, 2, gl.FLOAT, false, 0, 0 );
+		gl.useProgram( this.prog );	
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		gl.vertexAttribPointer( this.t, 1, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( this.t );
+
 		gl.drawArrays( gl.LINE_STRIP, 0, this.steps );
 	}
 }
@@ -65,6 +77,7 @@ class CurveDrawer
 // Deberán completar con la definición de una Bezier Cúbica para un punto t. Algunas consideraciones generales respecto a GLSL: si
 // declarás las variables pero no las usás, no se les asigna espacio. Siempre poner ; al finalizar las sentencias. Las constantes
 // en punto flotante necesitan ser expresadas como X.Y, incluso si son enteros: ejemplo, para 4 escribimos 4.0
+//gl_Position = vec4(1, t, t2, t3) * mvp * mat4(vp0, vp1, vp2, vp3);
 var curvesVS = `
 	attribute float t;
 	uniform mat4 mvp;
@@ -72,12 +85,25 @@ var curvesVS = `
 	uniform vec2 p1;
 	uniform vec2 p2;
 	uniform vec2 p3;
+
+	vec4 toBezier(float t, vec4 P0, vec4 P1, vec4 P2, vec4 P3)
+	{
+		float t2 = t * t;
+		float one_minus_t = 1.0 - t;
+		float one_minus_t2 = one_minus_t * one_minus_t;
+		return (P0 * one_minus_t2 * one_minus_t + P1 * 3.0 * t * one_minus_t2 + P2 * 3.0 * t2 * one_minus_t + P3 * t2 * t);
+	}
+
 	void main()
 	{ 
 		float t2 = t*t;
 		float t3 = t2*t;
-		
-		gl_Position = vec4(1, t, t2, t3) * mvp * vec4(p0, p1, p2, p3);
+		vec4 vp0 = vec4(p0,0,1);
+		vec4 vp2 = vec4(p1,0,1);
+		vec4 vp1 = vec4(p2,0,1);
+		vec4 vp3 = vec4(p3,0,1);
+
+		gl_Position = mvp * toBezier(t, vp0, vp1, vp2, vp3);
 	}
 `;
 //segundo 53:10 agregar vcolor = clr; ver el video para completar las declaraciones
