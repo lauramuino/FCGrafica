@@ -152,10 +152,10 @@ function InitWebGL()
 	// Inicializamos el canvas
 	// Es el mismo para WebGL y para los componentes SVG
 	const canvas         = document.getElementById("canvas");
-	canvas.oncontextmenu = function() {return false;};
+	canvas.oncontextmenu = function() {return false;};  //deshabilita el click derecho
 
 	// Contexto GL
-	gl = canvas.getContext("webgl", {antialias: false, depth: false});	
+	gl = canvas.getContext("webgl", {antialias: false, depth: false});	//TODO: LAURA: QUE SON LOS PARAMETROS ANTIALIAS Y DEPTH?
 	if (!gl) 
 	{
 		alert("No se pudo inicializar WebGL. Es probable que tu navegador no lo soporte.");
@@ -298,7 +298,7 @@ class LineDrawer
 		this.buffer = gl.createBuffer();
 
 		// Si bien creamos el buffer, no vamos a ponerle contenido en este
-		// constructor. La actualziación de la información de los vértices
+		// constructor. La actualización de la información de los vértices
 		// la haremos dentro de updatePoints().
 		
 	}
@@ -311,7 +311,10 @@ class LineDrawer
 		// Simplemente inicializamos la matriz para que escale los elementos de la escena
 		// al ancho y alto del canvas, invirtiendo la coordeanda y. La matriz está en formato 
 		// column-major.
-		var trans = [ 2/width,0,0,0,  0,-2/height,0,0, 0,0,1,0, -1,1,0,1 ];
+		var trans = [ 2/width, 0,        0, 0,  
+					  0,      -2/height, 0, 0, 
+					  0,       0,        1, 0, 
+					 -1,       1,        0, 1 ];
 
 		// Seteamos la matriz en la variable unforme del shader
 		gl.useProgram( this.prog );
