@@ -34,9 +34,9 @@ class CurveDrawer
 	{
 		// [Completar] Matriz de transformación.
 		var matrix = [ 2/width, 0,        0, 0,  
-			0,      -2/height, 0, 0, 
-			0,       0,        1, 0, 
-		   -1,       1,        0, 1 ];
+					   0,      -2/height, 0, 0, 
+					   0,       0,        1, 0, 
+					  -1,       1,        0, 1 ];
 
 		// [Completar] Binding del programa y seteo de la variable uniforme para la matriz.
 		gl.useProgram( this.prog );
@@ -96,11 +96,9 @@ var curvesVS = `
 
 	void main()
 	{ 
-		float t2 = t*t;
-		float t3 = t2*t;
 		vec4 vp0 = vec4(p0,0,1);
-		vec4 vp2 = vec4(p1,0,1);
-		vec4 vp1 = vec4(p2,0,1);
+		vec4 vp1 = vec4(p1,0,1);
+		vec4 vp2 = vec4(p2,0,1);
 		vec4 vp3 = vec4(p3,0,1);
 
 		gl_Position = mvp * toBezier(t, vp0, vp1, vp2, vp3);
