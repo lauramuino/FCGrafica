@@ -15,6 +15,7 @@ class CurveDrawer
 		this.p2  = gl.getUniformLocation(this.prog, 'p2');
 		this.p3  = gl.getUniformLocation(this.prog, 'p3');
 		this.t   = gl.getAttribLocation(this.prog, 't');
+		this.clr = gl.getAttribLocation(this.prog, 'clr');
 				
 		// Muestreo del parámetro t
 		this.steps = 100;
@@ -22,11 +23,24 @@ class CurveDrawer
 		for ( var i=0; i<this.steps; ++i ) {
 			tv.push( i / (this.steps-1) );
 		}
+
+		// Colores para cada vértice	
+		var colors = [];
+		for(var i=0; i<this.steps; ++i){
+			colors.push(1);
+			colors.push(0);
+			colors.push(1);
+			colors.push(1);
+		}
 		
 		// [Completar] Creacion del vertex buffer y seteo de contenido
 		this.buffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tv), gl.STATIC_DRAW);
+
+		this.color_buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer );
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW );
 	}
 
 	// Actualización del viewport (se llama al inicializar la web o al cambiar el tamaño de la pantalla)
@@ -69,6 +83,10 @@ class CurveDrawer
 		gl.enableVertexAttribArray( this.t );
 
 		gl.drawArrays( gl.LINE_STRIP, 0, this.steps );
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer);
+		gl.vertexAttribPointer(this.clr, 4, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(this.clr);
 	}
 }
 
@@ -80,11 +98,15 @@ class CurveDrawer
 //gl_Position = vec4(1, t, t2, t3) * mvp * mat4(vp0, vp1, vp2, vp3);
 var curvesVS = `
 	attribute float t;
+	attribute vec4 clr;
+
 	uniform mat4 mvp;
 	uniform vec2 p0;
 	uniform vec2 p1;
 	uniform vec2 p2;
 	uniform vec2 p3;
+
+	varying vec4 vcolor;
 
 	vec4 toBezier(float t, vec4 P0, vec4 P1, vec4 P2, vec4 P3)
 	{
@@ -102,6 +124,7 @@ var curvesVS = `
 		vec4 vp3 = vec4(p3,0,1);
 
 		gl_Position = mvp * toBezier(t, vp0, vp1, vp2, vp3);
+		vcolor = clr;
 	}
 `;
 //segundo 53:10 agregar vcolor = clr; ver el video para completar las declaraciones
@@ -109,8 +132,9 @@ var curvesVS = `
 // Fragment Shader
 var curvesFS = `
 	precision mediump float;
+	varying vec4 vcolor;
 	void main()
 	{
-		gl_FragColor = vec4(0,0,1,1);
+		gl_FragColor = vcolor;
 	}
 `;
