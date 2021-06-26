@@ -87,6 +87,8 @@ class MeshDrawer
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
 		this.mvp = gl.getUniformLocation(this.prog, 'mvp');
+		this.rotyz = gl.getUniformLocation(this.prog, 'rotyz');
+		this.swap = false;
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 		this.pos   = gl.getAttribLocation(this.prog, 'pos');
@@ -117,6 +119,7 @@ class MeshDrawer
 	swapYZ( swap )
 	{
 		// [COMPLETAR] Setear variables uniformes en el vertex shader
+		this.swap = swap;
 	}
 	
 	// Esta función se llama para dibujar la malla de triángulos
@@ -129,6 +132,24 @@ class MeshDrawer
 		gl.useProgram(this.prog);
 		// 2. Setear matriz de transformacion
 		gl.uniformMatrix4fv(this.mvp, false, trans);
+		var rotyzMat;
+		if (this.swap) {
+			rotyzMat = [
+				1, 0, 0, 0,
+				0, 0, 1, 0,
+				0, 1, 0, 0,
+				0, 0, 0, 1
+			];
+		} else {
+			rotyzMat = [
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+			];
+		}
+		gl.useProgram(this.prog);
+		gl.uniformMatrix4fv(this.rotyz, false, rotyzMat);
 	    // 3.Binding de los buffers
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 		gl.vertexAttribPointer(this.pos, 3, gl.FLOAT, false, 0, 0);
@@ -159,10 +180,11 @@ class MeshDrawer
 // Las constantes en punto flotante necesitan ser expresadas como x.y, incluso si son enteros: ejemplo, para 4 escribimos 4.0
 var meshVS = `
 	attribute vec3 pos;
+	uniform mat4 rotyz;
 	uniform mat4 mvp;
 	void main()
 	{ 
-		gl_Position = mvp * vec4(pos,1);
+		gl_Position = mvp * rotyz * vec4(pos,1);
 	}
 `;
 
