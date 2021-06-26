@@ -83,21 +83,19 @@ class MeshDrawer
 		// [COMPLETAR] inicializaciones
 
 		// 1. Compilamos el programa de shaders
+		this.prog   = InitShaderProgram( meshVS, meshFS );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
+		this.mvp = gl.getUniformLocation(this.prog, 'mvp');
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
+		this.pos   = gl.getAttribLocation(this.prog, 'pos');
 
 		// 4. Obtenemos los IDs de los atributos de los vértices en los shaders
+		this.buffer = gl.createBuffer();
 
 		// ...
 
-
-
-		this.prog   = InitShaderProgram( meshVS, meshFS );
-		this.mvp = gl.getUniformLocation(this.prog, 'mvp');
-		this.pos   = gl.getAttribLocation(this.prog, 'pos');
-		this.buffer = gl.createBuffer();
 	}
 	
 	// Esta función se llama cada vez que el usuario carga un nuevo archivo OBJ.
@@ -110,6 +108,8 @@ class MeshDrawer
 	{
 		// [COMPLETAR] Actualizar el contenido del buffer de vértices
 		this.numTriangles = vertPos.length / 3;
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 	}
 	
 	// Esta función se llama cada vez que el usuario cambia el estado del checkbox 'Intercambiar Y-Z'
@@ -126,14 +126,16 @@ class MeshDrawer
 		// [COMPLETAR] Completar con lo necesario para dibujar la colección de triángulos en WebGL
 		
 		// 1. Seleccionamos el shader
-	
+		gl.useProgram(this.prog);
 		// 2. Setear matriz de transformacion
-		
+		gl.uniformMatrix4fv(this.mvp, false, trans);
 	    // 3.Binding de los buffers
-		
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		gl.vertexAttribPointer(this.pos, 3, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(this.pos);
 		// ...
 		// Dibujamos
-		// gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
+		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles );
 	}
 	
 	// Esta función se llama para setear una textura sobre la malla
@@ -151,47 +153,6 @@ class MeshDrawer
 	}
 }
 
-
-function InitShaderProgram( vsSource, fsSource )
-{
-	// Función que compila cada shader individualmente
-	const vs = CompileShader( gl.VERTEX_SHADER,   vsSource );
-	const fs = CompileShader( gl.FRAGMENT_SHADER, fsSource );
-
-	// Crea y linkea el programa 
-	const prog = gl.createProgram();
-	gl.attachShader(prog, vs);
-	gl.attachShader(prog, fs);
-	gl.linkProgram(prog);
-
-	if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) 
-	{
-		alert('No se pudo inicializar el programa: ' + gl.getProgramInfoLog(prog));
-		return null;
-	}
-	return prog;
-}
-
-// Función para compilar shaders, recibe el tipo (gl.VERTEX_SHADER o gl.FRAGMENT_SHADER)
-// y el código en forma de string. Es llamada por InitShaderProgram()
-function CompileShader( type, source )
-{
-	// Creamos el shader
-	const shader = gl.createShader(type);
-
-	// Lo compilamos
-	gl.shaderSource(shader, source);
-	gl.compileShader(shader);
-
-	// 	Verificamos si la compilación fue exitosa
-	if (!gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) 
-	{
-		alert('Ocurrió un error durante la compilación del shader:\n' + gl.getShaderInfoLog(shader));
-		gl.deleteShader(shader);
-		return null;
-	}
-	return shader;
-}
 
 // Vertex Shader
 // Si declaras las variables pero no las usas es como que no las declaraste y va a tirar error. Siempre va punto y coma al finalizar la sentencia. 
