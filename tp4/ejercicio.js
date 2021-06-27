@@ -43,12 +43,6 @@
 function GetModelViewProjection( projectionMatrix, translationX, translationY, translationZ, rotationX, rotationY )
 {
 	// [COMPLETAR] Modificar el código para formar la matriz de transformación.
-	//radianRotation = rotation * Math.PI/180
-	// var rot = Array( Math.cos(rotationY), 0, -Math.sin(rotationY), 0,
-	// 					Math.sin(rotationY)*Math.sin(rotationX), Math.cos(rotationX), Math.cos(rotationY)*Math.sin(rotationX), 0,
-	// 					Math.sin(rotationY)*Math.sin(rotationX),              0,             1, 0,
-	// 					0, 0, 0, 1);
-
 	var rotY = Array(Math.cos(rotationY), 0, Math.sin(rotationY), 0,
 					0, 1, 0, 0,
 					-Math.sin(rotationY), 0, Math.cos(rotationY), 0,
@@ -89,6 +83,7 @@ class MeshDrawer
 		this.mvp = gl.getUniformLocation(this.prog, 'mvp');
 		this.rotyz = gl.getUniformLocation(this.prog, 'rotyz');
 		this.sampler = gl.getUniformLocation(this.prog, 'texGPU');
+		this.showTextureUniform = gl.getUniformLocation(this.prog, 'showTexture');
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 		this.pos   = gl.getAttribLocation(this.prog, 'pos');
@@ -102,7 +97,6 @@ class MeshDrawer
 
 		// ...
 		this.swap = false;
-		//this.showTexture = false;
 
 	}
 	
@@ -196,12 +190,12 @@ class MeshDrawer
 	
 	// Esta función se llama cada vez que el usuario cambia el estado del checkbox 'Mostrar textura'
 	// El argumento es un boleano que indica si el checkbox está tildado
-	showTexture( show )
+	showTexture( show )	
 	{
-		//this.showTexture = show;
 		// [COMPLETAR] Setear variables uniformes en el fragment shader
 		gl.useProgram(this.prog);
 		gl.uniform1i(this.sampler, 0); //utiliza el texure unit 0 o el numero de unit que quiera usar
+		gl.uniform1i(this.showTextureUniform, show); //utiliza el texure unit 0 o el numero de unit que quiera usar
 	}
 }
 
@@ -227,9 +221,14 @@ var meshVS = `
 var meshFS = `
 	precision mediump float;
 	uniform sampler2D texGPU;
+	uniform bool showTexture;
 	varying vec2 texCoord;
 	void main()
 	{		
-		gl_FragColor = texture2D(texGPU, texCoord);
+		if (showTexture) {
+			gl_FragColor = texture2D(texGPU, texCoord);
+		} else {
+			gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
+		}
 	}
 `;
