@@ -101,9 +101,12 @@ class MeshDrawer
 		this.mn  = gl.getUniformLocation(this.prog, 'mn');
 		this.rotyz = gl.getUniformLocation(this.prog, 'rotyz');
 		this.showTextureUniform = gl.getUniformLocation(this.prog, 'showTexture');
+		this.lightPos = gl.getUniformLocation(this.prog, 'lightPos');
+		this.shininess = gl.getUniformLocation(this.prog, 'shininess');
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 		this.pos = gl.getAttribLocation(this.prog,'pos');
 		this.texture = gl.getAttribLocation(this.prog, 'texture');
+		this.normal = gl.getAttribLocation(this.prog, 'normal');
 
 		// 4. Creamos los buffers
 		this.posBuf = gl.createBuffer(); //buffer para las posiciones de los vertices
@@ -161,7 +164,7 @@ class MeshDrawer
 		// 2. Setear uniformes con las matrices de transformaciones
 		gl.uniformMatrix4fv(this.mvp, false, matrixMVP);
 		gl.uniformMatrix4fv(this.mv, false, matrixMV);
-		gl.uniformMatrix4fv(this.mn, false, matrixNormal);
+		gl.uniformMatrix3fv(this.mn, false, matrixNormal);
 		
 		var rotyzMat;
 		if (this.swap) {
@@ -190,6 +193,10 @@ class MeshDrawer
 		gl.vertexAttribPointer(this.texture, 2, gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(this.texture);
 
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalsBuf);
+		gl.vertexAttribPointer(this.normal, 3, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(this.normal);
+
    		// 4.Dibujar
 		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
 	}
@@ -202,13 +209,10 @@ class MeshDrawer
 		gl.bindTexture(gl.TEXTURE_2D, this.textureBuffer);
 		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img );
 
-
 		//Ahora que la textura ya está seteada, debemos setear 
 		// parámetros uniformes en el fragment shader para que pueda usarla. 
 		gl.generateMipmap(gl.TEXTURE_2D);
-
 		gl.activeTexture(gl.TEXTURE0); //DIGO QUE VOY A USAR LA TEXTURE UNIT 0
-
 		gl.bindTexture(gl.TEXTURE_2D, this.textureBuffer);//aca la cargo posta posta posta
 	}
 		
@@ -225,13 +229,17 @@ class MeshDrawer
 	// Este método se llama al actualizar la dirección de la luz desde la interfaz
 	setLightDir( x, y, z )
 	{		
-		// [COMPLETAR] Setear variables uniformes en el fragment shader para especificar la dirección de la luz
+		//Setear variables uniformes en el fragment shader para especificar la dirección de la luz
+		gl.useProgram(this.prog);
+		gl.uniform3fv(this.lightPos, [x, y, z]);
 	}
 		
 	// Este método se llama al actualizar el brillo del material 
 	setShininess( shininess )
 	{		
-		// [COMPLETAR] Setear variables uniformes en el fragment shader para especificar el brillo.
+		//Setear variables uniformes en el fragment shader para especificar el brillo.
+		gl.useProgram(this.prog);
+		gl.uniform1f (this.shininess, shininess);
 	}
 }
 
@@ -249,21 +257,24 @@ class MeshDrawer
 var meshVS = `
 	attribute vec3 pos;
 	attribute vec2 texture;
+	attribute vec3 normal;
 
 	uniform mat4 mvp;
-	//uniform mat4 mv;
-	//uniform mat4 mn;
+	uniform mat4 mv;
 	uniform mat4 rotyz;
+	
 
 	varying vec2 texCoord;
-	//varying vec3 normCoord;
-	//varying vec4 vertCoord;
+	varying vec3 normCoord;
+	varying vec4 vertCoord;
 
 	void main()
 	{ 
-		gl_Position = mvp * rotyz * vec4(pos,1);
+		gl_Position = mvp * rotyz * vec4(pos,1.0);
 
 		texCoord = texture;
+		normCoord = normal;
+		vertCoord = mv * vec4(pos,1.0);
 	}
 `;
 
@@ -276,20 +287,39 @@ var meshVS = `
 var meshFS = `
 	precision mediump float;
 
-	//uniform mat3 mn;
+	uniform mat3 mn;
 	uniform bool showTexture;
 	uniform sampler2D texGPU;
+	uniform vec3 lightPos;
+	uniform float shininess;
 
 	varying vec2 texCoord;
-	//varying vec3 normCoord;
-	//varying vec4 vertCoord;
+	varying vec3 normCoord;
+	varying vec4 vertCoord;
 
 	void main()
-	{		
+	{	
+
+		vec4 normal = normalize(vec4(normalize(mn * normCoord), 1.0));
+		vec4 lightDir = normalize(vec4(lightPos,1.0) + vertCoord);
+		vec4 viewDir = normalize(-vertCoord);
+		vec4 halfDir = normalize(lightDir + viewDir);
+
+	    float cosOmega = max(dot(halfDir, normal), 0.0); 
+	    float cosTheta = max(dot(lightDir,normal), 0.0);
+
+	    vec4 light_intensity = vec4(1.0, 1.0, 1.0,1.0);
+	    vec4 K_shininess = vec4(1.0, 1.0, 1.0,1.0);
+	    vec4 K_diffuse;
+	    vec4 K_ambient;
+
 		if (showTexture) {
-			gl_FragColor = texture2D(texGPU, texCoord);
+			K_diffuse = texture2D(texGPU, texCoord);
+			K_ambient = K_diffuse;
 		} else {
-			gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
+			K_diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+			K_ambient = vec4(0.5, 0.0, 0.5, 1.0);
 		}
+		gl_FragColor = light_intensity * (K_diffuse * cosTheta + K_shininess * pow(cosOmega, shininess))+ K_ambient;
 	}
 `;
