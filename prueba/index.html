@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script>
+			var camera, scene, renderer;
+			init();
+
+			renderer.render(scene, camera);
+
+
+			const myPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+
+			function init(){
+				scene = new THREE.Scene();
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				var size =14, step=1;
+				var geometry = new THREE.Geometry(); 
+				var material = new THREE.LineBasicMaterial({color: 'white'});
+
+				for(var i =-size; i<=size; i+=step){
+					geometry.vertices.push(new THREE.Vector3(-size, -0.04, i));
+					geometry.vertices.push(new THREE.Vector3(size, -0.04, i));
+
+					geometry.vertices.push(new THREE.Vector3(i, -0.04, -size));
+					geometry.vertices.push(new THREE.Vector3(i, -0.04, size));
+				}
+
+				var line = new THREE.Line(geometry, material, THREE.LinePieces);
+				scene.add(line);
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+				plane.rotation.x += 0.01;
+				plane.rotation.y += 0.01;
+				renderer.render( scene, camera );
+			}		
+		</script>
+	</body>
+</html>
