@@ -43,9 +43,10 @@
 				pointLight.position.z = 4;
 				scene.add(pointLight);
 				
+				// GUI management for lightning
 				gui.add(pointLight.position, 'x');
 				gui.add(pointLight.position, 'y');
-				gui.add(pointLight.position, 'z').min(0);
+				gui.add(pointLight.position, 'z');
 				gui.add(pointLight, 'intensity').min(0).max(5);
 
 				//camera controls
@@ -110,7 +111,7 @@
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
 
-				const material = new THREE.MeshStandardMaterial({color:'white'});
+				const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
 				const plane = new THREE.Mesh(geometry,material);
 				scene.add(plane);
 			}
