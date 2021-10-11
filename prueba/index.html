@@ -93,14 +93,6 @@
 				}
 			}
 
-			//the downside is not visible
- 			function otherMesh(){
- 				const geometry = new THREE.PlaneBufferGeometry(3,3,64,64);
- 				const material = new THREE.MeshStandardMaterial({color:'white'});
- 				const plane = new THREE.Mesh(geometry,material);
- 				scene.add(plane);
- 			}
-
 			//a line based grid, with the helpers, for understanding visual results
 			function map(){
 				const size = 100;
@@ -126,8 +118,9 @@
 				const heightSegments = 100; // Optional. Default is 1. 
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
+				geometry.rotateX(Math.PI/2);
+				// Adding random height
 				for (var i=0; i <geometry.attributes.position.count; i++) {
-					geometry.attributes.position.array[3*i+2] = -geometry.attributes.position.array[3*i+1];
 					geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5); 
 				}
 
@@ -138,36 +131,9 @@
 				scene.add(plane);
 			}
 
-			function aCube(){
-				const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-				const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-				const cube = new THREE.Mesh( geometry, material );
-				scene.add(cube);
-			}
-
-			function aLine(){
-				const points = [];
-				points.push(new THREE.Vector3(-10,0,0));
-				points.push(new THREE.Vector3(0,0,10));
-				points.push(new THREE.Vector3(10,0,0));
-
-
-				const geometry = new THREE.BufferGeometry().setFromPoints( points );
-				var material = new THREE.LineBasicMaterial({color: 'white'});
-				const line = new THREE.Line( geometry, material );
-				scene.add(line);
-			}
-
 			function render(){
 				renderer.render(scene, camera);
 			}
-
-			function animate() {
-				requestAnimationFrame( animate );
-				plane.rotation.x += 0.01;
-				plane.rotation.y += 0.01;
-				renderer.render( scene, camera );
-			}		
 
 			function tick() {
 
