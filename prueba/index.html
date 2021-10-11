@@ -12,6 +12,7 @@
 		<script src="./js/three.js"></script>
 		<script type="module">
 			import {OrbitControls} from './js/OrbitControls.js';
+			import * as dat from './js/dat.gui/build/dat.gui.module.js'
 			var camera, scene, renderer;
 			init();
 			map();
@@ -20,6 +21,9 @@
 
 
 			function init(){
+				// Debug
+				const gui = new dat.GUI()
+
 				//setting camera
 				scene = new THREE.Scene();
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -37,6 +41,10 @@
 				pointLight.position.y = 3;
 				pointLight.position.z = 4;
 				scene.add(pointLight);
+				
+				gui.add(pointLight.position, 'x').min(0)
+				gui.add(pointLight.position, 'y').min(0)
+				gui.add(pointLight.position, 'z').min(0)
 
 				//camera controls
 				const controls = new OrbitControls(camera, renderer.domElement);
