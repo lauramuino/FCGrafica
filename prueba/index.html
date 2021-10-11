@@ -81,10 +81,10 @@
  				scene.add(plane);
  			}
 
-			//a line based grid, with the helpers
+			//a line based grid, with the helpers, for understanding visual results
 			function map(){
-				const size = 10;
-				const divisions = 10;
+				const size = 100;
+				const divisions = 100;
 				const gridHelper = new THREE.GridHelper(size, divisions);
 				console.log(gridHelper);
 				scene.add(gridHelper);
@@ -107,6 +107,10 @@
 				const heightSegments = 1; // Optional. Default is 1. 
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
+
+				for (var i=0; i <geometry.vertices.length; i++) {
+					geometry.vertices[i].z = Math.floor(Math.random() * 10);
+				}
 
 				const material = new THREE.MeshStandardMaterial({color:'white'});
 				const plane = new THREE.Mesh(geometry,material);
