@@ -37,16 +37,16 @@
 				document.body.appendChild( renderer.domElement );
 
 				//pointlight
-				const pointLight = new THREE.PointLight(0xffffff, 2);
-				pointLight.position.x = 2;
-				pointLight.position.y = 3;
-				pointLight.position.z = 4;
-				scene.add(pointLight);
+				const spotLight = new THREE.SpotLight(0xffffff, 2, -Math.PI);
+				spotLight.position.set(20,20,20);
+				spotLight.castShadow = true;
+				scene.add(spotLight);
 				
-				gui.add(pointLight.position, 'x');
-				gui.add(pointLight.position, 'y');
-				gui.add(pointLight.position, 'z').min(0);
-				gui.add(pointLight, 'intensity').min(0).max(5);
+				// GUI management for lightning
+				gui.add(spotLight.position, 'x');
+				gui.add(spotLight.position, 'y');
+				gui.add(spotLight.position, 'z');
+				gui.add(spotLight, 'intensity').min(0).max(20);
 
 				//camera controls
 				controls = new OrbitControls(camera, renderer.domElement);
@@ -88,11 +88,10 @@
 				const size = 100;
 				const divisions = 100;
 				const gridHelper = new THREE.GridHelper(size, divisions);
-				console.log(gridHelper);
 				scene.add(gridHelper);
 
 				//The X axis is red, Y axis is green, Z axis is blue.
-				const axesHelper = new THREE.AxesHelper( 5 );
+				const axesHelper = new THREE.AxesHelper( 100 );
 				scene.add( axesHelper );
 			}
 
@@ -103,18 +102,20 @@
 
 			//with plane geometry
 			function tarrain(){
-				const width = 10; // Width along the X axis. Default is 1.
-				const height = 10; // Height along the Y axis. Default is 1.
-				const widthSegments = 1; // Optional. Default is 1.
-				const heightSegments = 1; // Optional. Default is 1. 
+				const width = 50; // Width along the X axis. Default is 1.
+				const height = 50; // Height along the Y axis. Default is 1.
+				const widthSegments = 100; // Optional. Default is 1.
+				const heightSegments = 100; // Optional. Default is 1. 
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
-
-				for (var i=0; i <geometry.vertices.length; i++) {
-					geometry.vertices[i].z = Math.floor(Math.random() * 10);
+				for (var i=0; i <geometry.attributes.position.count; i++) {
+					geometry.attributes.position.array[3*i+2] = -geometry.attributes.position.array[3*i+1];
+					geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5); 
 				}
 
-				const material = new THREE.MeshStandardMaterial({color:'white'});
+				
+				const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
+				// var material = new THREE.MeshPhongMaterial({color: 0xdddddd, wireframe: true });
 				const plane = new THREE.Mesh(geometry,material);
 				scene.add(plane);
 			}
