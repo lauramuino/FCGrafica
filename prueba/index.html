@@ -28,7 +28,7 @@
 				//setting camera
 				scene = new THREE.Scene();
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-				camera.position.set(10,0,0);
+				camera.position.set(40,20,50);
 				camera.lookAt(scene.position);
 
 				//todo: dont remember what this is
@@ -37,21 +37,39 @@
 				document.body.appendChild( renderer.domElement );
 
 				//pointlight
-				const spotLight = new THREE.SpotLight(0xffffff, 2, -Math.PI);
-				spotLight.position.set(20,20,20);
-				spotLight.castShadow = true;
-				scene.add(spotLight);
+				const light = new THREE.PointLight(0xffffff, 1);
+				light.position.set(20,20,20);
+				light.castShadow = true;
+				scene.add(light);
+				// Add Lightning management helper
+				const helper = new THREE.PointLightHelper(light);
+				scene.add(helper);
 				
+				// function to update light helper
+				function updateLight() {
+					helper.update();
+				}
+				
+				// Add light and helper to GUI
+				function addVec3ToGUI(gui, vector3, name, onChangeFn) {
+					const folder = gui.addFolder(name);
+					folder.add(vector3, 'x', -100, 100).onChange(onChangeFn);
+					folder.add(vector3, 'y', 0, 100).onChange(onChangeFn);
+					folder.add(vector3, 'z', -100, 100).onChange(onChangeFn);
+					folder.open();
+				}
+
 				// GUI management for lightning
-				gui.add(spotLight.position, 'x');
-				gui.add(spotLight.position, 'y');
-				gui.add(spotLight.position, 'z');
-				gui.add(spotLight, 'intensity').min(0).max(20);
+				gui.add(light, 'intensity', 0, 2, 0.01);
+				gui.add(light, 'distance', 0, 40).onChange(updateLight);
+				// Add light position and target position to GUI
+				addVec3ToGUI(gui, light.position, 'position', updateLight);
 
 				//camera controls
 				controls = new OrbitControls(camera, renderer.domElement);
 				controls.addEventListener( 'change', render );
-				controls.target.y = camera.position.y;
+				// Set control center target to almost center of plane
+				controls.target.set(0, 5, 0);
 				controls.update();
 			}
 
