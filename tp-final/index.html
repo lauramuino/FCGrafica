@@ -22,9 +22,6 @@
 
 
 			function init(){
-				// Debug
-				const gui = new dat.GUI()
-
 				//setting camera
 				scene = new THREE.Scene();
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -36,6 +33,20 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 
+				lightHandler();
+
+				//camera controls
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.addEventListener( 'change', render );
+				// Set control center target to almost center of plane
+				controls.target.set(0, 2, 0);
+				controls.update();
+			}
+
+			
+			function lightHandler(){
+				// Debug
+				const gui = new dat.GUI()
 				//pointlight
 				const light = new THREE.PointLight(0xffffff, 1);
 				light.position.set(20,20,20);
@@ -64,17 +75,9 @@
 				gui.add(light, 'distance', 0, 40).onChange(updateLight);
 				// Add light position and target position to GUI
 				addVec3ToGUI(gui, light.position, 'position', updateLight);
-
-				//camera controls
-				controls = new OrbitControls(camera, renderer.domElement);
-				controls.addEventListener( 'change', render );
-				// Set control center target to almost center of plane
-				controls.target.set(0, 2, 0);
-				controls.update();
 			}
 
-			
-			//a line based grid, with the helpers, for understanding visual results
+			//a line based grid, with the axes, for understanding visual results
 			function map(){
 				const size = 100;
 				const divisions = 100;
@@ -133,6 +136,7 @@
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
 				geometry.rotateX(Math.PI/2);
+				
 				// Add heights
 				// addRandomHeights(geometry);
 				generateHill(geometry);
