@@ -69,60 +69,73 @@
 				controls = new OrbitControls(camera, renderer.domElement);
 				controls.addEventListener( 'change', render );
 				// Set control center target to almost center of plane
-				controls.target.set(0, 5, 0);
+				controls.target.set(0, 2, 0);
 				controls.update();
 			}
 
-			//todo: has a bug
-			function manualMesh(){
-				var size =2, step=1;
-				var material = new THREE.LineBasicMaterial({color: 'white'});
-
-				var geometry;
-				var line;
-				for(var i =-size; i<size; i+=step){
-					const points = [];
-					points.push(new THREE.Vector3(i, 0, i+1));
-					points.push(new THREE.Vector3(size, 0, i));
-					points.push(new THREE.Vector3(i, 0, -size));
-					points.push(new THREE.Vector3(i, 0, size));
-
-					geometry = new THREE.BufferGeometry().setFromPoints(points);
-					line = new THREE.Line(geometry, material, THREE.LinePieces);
-					scene.add(line);
-				}
-			}
-
+			
 			//a line based grid, with the helpers, for understanding visual results
 			function map(){
 				const size = 100;
 				const divisions = 100;
 				const gridHelper = new THREE.GridHelper(size, divisions);
 				scene.add(gridHelper);
-
+				
 				//The X axis is red, Y axis is green, Z axis is blue.
 				const axesHelper = new THREE.AxesHelper( 100 );
 				scene.add( axesHelper );
 			}
-
+			
 			function polarMapCoordenates(){
 				const polarHelper = new THREE.PolarGridHelper();
 				scene.add(polarHelper);
+			}
+			
+			// Generates a hill on the given geometry around the centerpoint
+			function generateHill(geometry){
+				var maxRadious = 5
+				var radious = Math.random() * maxRadious + 1;
+				var totalMountains = 500
+				// Keep track of min and max height for normalization
+				var max = Math.pow(maxRadious,2)
+				var min = 0
+				// Choose random mountain center
+				for (var j=0; j < totalMountains; j++) {
+					var randomLocation = Math.floor(Math.random() * geometry.attributes.position.count)
+					var centerX = geometry.attributes.position.array[3*randomLocation];
+					var centerZ = geometry.attributes.position.array[3*randomLocation+2];
+					// Calculate height for points inside the radious (other points are 0)
+					for (var i=0; i <geometry.attributes.position.count; i++) {
+						var coordX = geometry.attributes.position.array[3*i+0];
+						var coordZ = geometry.attributes.position.array[3*i+2];
+						var y = Math.max(Math.pow(radious,2) - (Math.pow((coordX - centerX),2) + Math.pow((coordZ - centerZ),2)),0)
+						if (y > max) {
+							max = y;
+						}
+						geometry.attributes.position.array[3*i+1] += (y - min)/(max-min); 
+					}
+				}
+			}
+
+			// Generates random heights
+			function addRandomHeights(geometry) {
+				for (var i=0; i <geometry.attributes.position.count; i++) {
+					geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5); 
+				}
 			}
 
 			//with plane geometry
 			function tarrain(){
 				const width = 50; // Width along the X axis. Default is 1.
 				const height = 50; // Height along the Y axis. Default is 1.
-				const widthSegments = 100; // Optional. Default is 1.
-				const heightSegments = 100; // Optional. Default is 1. 
+				const widthSegments = 1000; // Optional. Default is 1.
+				const heightSegments = 1000; // Optional. Default is 1. 
 
 				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
 				geometry.rotateX(Math.PI/2);
-				// Adding random height
-				for (var i=0; i <geometry.attributes.position.count; i++) {
-					geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5); 
-				}
+				// Add heights
+				// addRandomHeights(geometry);
+				generateHill(geometry);
 
 				
 				const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
