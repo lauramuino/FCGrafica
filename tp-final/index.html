@@ -71,10 +71,17 @@
 				}
 
 				// GUI management for lightning
-				gui.add(light, 'intensity', 0, 2, 0.01);
-				gui.add(light, 'distance', 0, 40).onChange(updateLight);
+				const lightFolder = gui.addFolder('lightning')
 				// Add light position and target position to GUI
-				addVec3ToGUI(gui, light.position, 'position', updateLight);
+				addVec3ToGUI(lightFolder, light.position, 'position', updateLight);
+				lightFolder.add(light, 'intensity', 0, 2, 0.01);
+				lightFolder.add(light, 'distance', 0, 40).onChange(updateLight);
+				// Add color to light
+				const col = { color: '#FFFFFF' }
+				lightFolder.addColor(col, 'color').onChange(() => {
+					light.color.set(col.color)
+				})
+				lightFolder.open();
 			}
 
 			//a line based grid, with the axes, for understanding visual results
