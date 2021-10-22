@@ -127,6 +127,31 @@
 				}
 			}
 
+			function generateTexture(){
+				// const texture = new THREE.TextureLoader().load( 'img/Heightmap.png');
+				// return new THREE.MeshBasicMaterial( { map: texture } );
+
+				var material = new THREE.ShaderMaterial(
+				{
+					uniforms: {
+						color1: {value: new THREE.Color("red")},
+						color2: {value: new THREE.Color("purple")}
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						void main() {
+						    vUv = uv;
+						    gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+						} `,
+					fragmentShader: `
+						uniform vec3 color1;
+						uniform vec3 color2;
+						varying vec2 vUv;
+						void main() {  gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0); }	`
+				});
+				return material;
+			}
+
 			//with plane geometry
 			function tarrain(){
 				const width = 50; // Width along the X axis. Default is 1.
@@ -141,8 +166,8 @@
 				// addRandomHeights(geometry);
 				generateHill(geometry);
 
-				
-				const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
+				const material = generateTexture();
+				//const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
 				// var material = new THREE.MeshPhongMaterial({color: 0xdddddd, wireframe: true });
 				const plane = new THREE.Mesh(geometry,material);
 				scene.add(plane);
