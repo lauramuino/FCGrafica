@@ -141,20 +141,44 @@
 				var material = new THREE.ShaderMaterial(
 				{
 					uniforms: {
-						color1: {value: new THREE.Color("red")},
-						color2: {value: new THREE.Color("purple")}
+						color1: {value: new THREE.Color("white")},
+						color2: {value: new THREE.Color("black")}
 					},
 					vertexShader: `
 						varying vec2 vUv;
+						varying vec3 vPos; 
+						varying vec3 vNormal; 
 						void main() {
 						    vUv = uv;
-						    gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+						    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);
+							vPos = (modelViewMatrix * vec4(position, 1.0)).xyz;
+							vNormal = (modelViewMatrix * vec4(normal, 0.0)).xyz;
 						} `,
 					fragmentShader: `
 						uniform vec3 color1;
 						uniform vec3 color2;
 						varying vec2 vUv;
-						void main() {  gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0); }	`
+						uniform vec3 diffuse;
+						varying vec3 vPos;
+						varying vec3 vNormal;
+
+						struct PointLight {
+							vec3 position;
+							vec3 color;
+						};
+						uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
+
+						void main() {
+							vec4 addedLights = vec4(mix(color1, color2, vUv.y), 1.0);
+							for(int l = 0; l < NUM_POINT_LIGHTS; l++) {
+								vec3 adjustedLight = pointLights[l].position + cameraPosition;
+								vec3 lightDirection = normalize(vPos - adjustedLight);
+								addedLights.rgb += clamp(dot(-lightDirection, vNormal), 0.0, 1.0) * pointLights[l].color;
+							}
+							gl_FragColor = addedLights;//mix(vec4(diffuse.x, diffuse.y, diffuse.z, 1.0), addedLights, addedLights);
+						}
+						`,
+					side: THREE.DoubleSide
 				});
 				return material;
 			}
