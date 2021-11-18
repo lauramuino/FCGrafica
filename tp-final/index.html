@@ -14,6 +14,7 @@
 			import {OrbitControls} from './js/OrbitControls.js';
 			import * as dat from './js/dat.gui/build/dat.gui.module.js'
 			var camera, scene, renderer, controls;
+			var diffuse, pointlight_uniform;
 			init();
 			map();
 			tarrain();
@@ -64,9 +65,9 @@
 				// Add light and helper to GUI
 				function addVec3ToGUI(gui, vector3, name, onChangeFn) {
 					const folder = gui.addFolder(name);
-					folder.add(vector3, 'x', -100, 100).onChange(onChangeFn);
-					folder.add(vector3, 'y', 0, 100).onChange(onChangeFn);
-					folder.add(vector3, 'z', -100, 100).onChange(onChangeFn);
+					folder.add(vector3, 'x', -50, 50).onChange(onChangeFn);
+					folder.add(vector3, 'y', 0, 20).onChange(onChangeFn);
+					folder.add(vector3, 'z', -50, 50).onChange(onChangeFn);
 					folder.open();
 				}
 
@@ -76,13 +77,31 @@
 				addVec3ToGUI(lightFolder, light.position, 'position', updateLight);
 				lightFolder.add(light, 'intensity', 0, 2, 0.01);
 				lightFolder.add(light, 'distance', 0, 40).onChange(updateLight);
+
+
+
+				// Add diffuse
+				diffuse =  {type: 'c', value: new THREE.Color(0x0000ff)};
+				var uniformsFolder = gui.addFolder('Uniforms');
+				diffuse.guivalue = [diffuse.value.r * 255, diffuse.value.g * 255, diffuse.value.b * 255];
+				var controller = uniformsFolder.addColor(diffuse, 'guivalue').name('diffuse');
+				controller.onChange(function(value){
+					this.object.value.setRGB(value[0]/255, value[1]/255, value[2]/255);
+				});
+				uniformsFolder.open();
+
+
 				// Add color to light
 				const col = { color: '#FFFFFF' }
 				lightFolder.addColor(col, 'color').onChange(() => {
 					light.color.set(col.color)
 				})
 				lightFolder.open();
+
+
+				pointlight_uniform = light;
 			}
+
 
 			//a line based grid, with the axes, for understanding visual results
 			function map(){
@@ -138,47 +157,51 @@
 				// const texture = new THREE.TextureLoader().load( 'img/Heightmap.png');
 				// return new THREE.MeshBasicMaterial( { map: texture } );
 
+				var uniforms = {
+					pointLight: {get value() {return pointlight_uniform}},
+					diffuse: diffuse,
+					color1: {value: new THREE.Color("red")},
+					color2: {value: new THREE.Color("blue")}
+				}
+
 				var material = new THREE.ShaderMaterial(
 				{
-					uniforms: {
-						color1: {value: new THREE.Color("white")},
-						color2: {value: new THREE.Color("black")}
-					},
+					uniforms: uniforms,
 					vertexShader: `
-						varying vec2 vUv;
 						varying vec3 vPos; 
-						varying vec3 vNormal; 
+						varying vec3 vNormal;
+						varying vec2 vUv; 
 						void main() {
-						    vUv = uv;
-						    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.0);
-							vPos = (modelViewMatrix * vec4(position, 1.0)).xyz;
-							vNormal = (modelViewMatrix * vec4(normal, 0.0)).xyz;
+							vUv = uv;
+						    vPos = (modelMatrix * vec4(position, 1.0 )).xyz;
+							vNormal = normalMatrix * normal;
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
 						} `,
 					fragmentShader: `
 						uniform vec3 color1;
 						uniform vec3 color2;
-						varying vec2 vUv;
 						uniform vec3 diffuse;
 						varying vec3 vPos;
 						varying vec3 vNormal;
+						varying vec2 vUv;
 
 						struct PointLight {
-							vec3 position;
 							vec3 color;
+							vec3 position;
+							float distance;
 						};
-						uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
+						uniform PointLight pointLight;
 
 						void main() {
-							vec4 addedLights = vec4(mix(color1, color2, vUv.y), 1.0);
-							for(int l = 0; l < NUM_POINT_LIGHTS; l++) {
-								vec3 adjustedLight = pointLights[l].position + cameraPosition;
-								vec3 lightDirection = normalize(vPos - adjustedLight);
-								addedLights.rgb += clamp(dot(-lightDirection, vNormal), 0.0, 1.0) * pointLights[l].color;
-							}
+							vec4 addedLights = vec4(0.1, 0.1, 0.1, 1.0);
+							vec3 lightDirection = normalize(vPos - pointLight.position);
+							addedLights.rgb += clamp(dot(lightDirection, vNormal), 0.0, 1.0) * pointLight.color;
+							// gl_FragColor = mix(vec4(mix(color1, color2, vUv.y), 1.0), addedLights, addedLights);
 							gl_FragColor = mix(vec4(diffuse.x, diffuse.y, diffuse.z, 1.0), addedLights, addedLights);
 						}
 						`,
-					side: THREE.DoubleSide
+					side: THREE.DoubleSide,
+					light: true
 				});
 				return material;
 			}
@@ -201,6 +224,7 @@
 				//const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
 				// var material = new THREE.MeshPhongMaterial({color: 0xdddddd, wireframe: true });
 				const plane = new THREE.Mesh(geometry,material);
+				plane.receiveShadow = true;
 				scene.add(plane);
 			}
 
