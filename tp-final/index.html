@@ -104,10 +104,9 @@
 			}
 			
 			// Generates a hill on the given geometry around the centerpoint
-			function generateHill(geometry, threasholds){
+			function generateHill(geometry, thresholds){
 				const count = geometry.attributes.position.count;
 				geometry.setAttribute('color', new THREE.BufferAttribute( new Float32Array(count *3 ), 3 ) );
-				const colors = geometry.attributes.color;
 				var maxRadious = 5;
 				var radious = Math.random() * maxRadious + 1;
 				var totalMountains = 500;
@@ -136,16 +135,46 @@
 				}
 				
 				// Add colors to each vertex by defining a threshold from the max height
-				var peakThreashold = maxNormalized * threasholds.peak;
-				var lowThreashold = maxNormalized * threasholds.low;
+				updateGeoColors(geometry, thresholds)
+			}
+
+			function updateGeoColors(geometry, thresholds) {
+				const count = geometry.attributes.position.count;
+				const colors = geometry.attributes.color;
+				var maxNormalized = 0;
+				// calculate maxheight
+				for (var i=0; i < count; i++) {
+					if (geometry.attributes.position.getY(i) > maxNormalized) {
+						maxNormalized = geometry.attributes.position.getY(i);
+					}
+				}
+
+				// update colors
+				var peakThreshold = maxNormalized * thresholds.peak;
+				var lowThreshold = maxNormalized * thresholds.low;
+				var highThreshold = maxNormalized * thresholds.high;
+				var higherMidThreshold = maxNormalized * thresholds.highMid;
+				var midThreshold = maxNormalized * thresholds.mid;
 				for (var i=0; i < count; i++) {
 					var coordY = geometry.attributes.position.getY(i);
-					if (coordY >= peakThreashold) {
+					if (coordY >= midThreshold && higherMidThreshold >= coordY && thresholds.sections == 6) {
+						colors.setXYZ( i, 85, 65, 36 );
+						// colors.setXYZ( i, 57, 82, 126 );
+					} else if (coordY >= higherMidThreshold && highThreshold >= coordY && thresholds.sections >= 5) {
+						colors.setXYZ( i, 85, 65, 36 );
+						// colors.setXYZ( i, 204, 229, 251 );
+					} else if (coordY >= highThreshold && peakThreshold >= coordY && thresholds.sections >= 4) {
+						colors.setXYZ( i, 60, 37, 21 );
+						// colors.setXYZ( i, 157, 204, 250 );
+					} else if (coordY >= peakThreshold && thresholds.sections >= 3) {
 						colors.setXYZ( i, 255, 255, 255 );
-					} else if (coordY >= lowThreashold) {
-						colors.setXYZ( i+0, 85, 65, 36 );
-					} else {
+						// colors.setXYZ( i, 68, 158, 244 );
+					} else if (coordY >= lowThreshold  && peakThreshold >= coordY && thresholds.sections >= 2) {
 						colors.setXYZ( i, 30, 196, 100 );
+						// colors.setXYZ( i, 120, 186, 249 );
+					} else {
+						colors.setXYZ( i, 36, 137, 204 );
+						// colors.setXYZ( i, 37, 60, 106 );
 					}
 				}
 			}
@@ -168,12 +197,9 @@
 				geometry.rotateX(Math.PI/2);
 
 				// Define thresholds for each part of the heights
-				// TODO: Add configurable amount of sections and add lerp to colors
-				var thresholds = {peak: 0.95, low: 0.45};
-				gui.add(thresholds, 'peak', 0.01, 1, 0.01);
-				gui.add(thresholds, 'low', 0.01, 1, 0.01);
+				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.65, mid: 0.4};
 				generateHill(geometry, thresholds);
-
+				
 				
 				// const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
 				var material = new THREE.MeshPhongMaterial({
@@ -183,6 +209,34 @@
 				
 				const plane = new THREE.Mesh(geometry,material);
 				scene.add(plane);
+
+				function updatePeakThreshold(plane) {
+					return function(event) {
+						thresholds.peak = event;
+						updateGeoColors(plane.geometry, thresholds);
+						plane.geometry.attributes.color.needsUpdate = true;
+					}
+				}
+
+				function updateLowThreshold(plane) {
+					return function(event) {
+						thresholds.low = event;
+						updateGeoColors(plane.geometry, thresholds);
+						plane.geometry.attributes.color.needsUpdate = true;
+					}
+				}
+
+				function updateThresholdSections(plane) {
+					return function(event) {
+						thresholds.sections = event;
+						updateGeoColors(plane.geometry, thresholds);
+						plane.geometry.attributes.color.needsUpdate = true;
+					}
+				}
+
+				gui.add(thresholds, 'peak', 0.01, 1, 0.01).onChange(updatePeakThreshold(plane));
+				gui.add(thresholds, 'low', 0.01, 1, 0.01).onChange(updateLowThreshold(plane));
+				gui.add(thresholds, 'sections', 1, 6, 1).onChange(updateThresholdSections(plane));
 			}
 
 			function render(){
