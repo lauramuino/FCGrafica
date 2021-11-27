@@ -22,9 +22,6 @@
 
 
 			function init(){
-				// Debug
-				const gui = new dat.GUI()
-
 				//setting camera
 				scene = new THREE.Scene();
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
@@ -36,6 +33,20 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 
+				lightHandler();
+
+				//camera controls
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.addEventListener( 'change', render );
+				// Set control center target to almost center of plane
+				controls.target.set(0, 2, 0);
+				controls.update();
+			}
+
+			
+			function lightHandler(){
+				// Debug
+				const gui = new dat.GUI()
 				//pointlight
 				const light = new THREE.PointLight(0xffffff, 1);
 				light.position.set(20,20,20);
@@ -61,6 +72,7 @@
 				}
 				
 				// GUI management for lightning
+
 				const lightFolder = gui.addFolder('light');
 
 				light.intensity = 0.01;
@@ -76,6 +88,7 @@
 				})
 				lightFolder.open();
 
+
 				//camera controls
 				controls = new OrbitControls(camera, renderer.domElement);
 				controls.addEventListener( 'change', render );
@@ -85,8 +98,7 @@
 				return gui
 			}
 
-			
-			//a line based grid, with the helpers, for understanding visual results
+			//a line based grid, with the axes, for understanding visual results
 			function map(){
 				const size = 100;
 				const divisions = 100;
@@ -186,6 +198,31 @@
 				}
 			}
 
+			function generateTexture(){
+				// const texture = new THREE.TextureLoader().load( 'img/Heightmap.png');
+				// return new THREE.MeshBasicMaterial( { map: texture } );
+
+				var material = new THREE.ShaderMaterial(
+				{
+					uniforms: {
+						color1: {value: new THREE.Color("red")},
+						color2: {value: new THREE.Color("purple")}
+					},
+					vertexShader: `
+						varying vec2 vUv;
+						void main() {
+						    vUv = uv;
+						    gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+						} `,
+					fragmentShader: `
+						uniform vec3 color1;
+						uniform vec3 color2;
+						varying vec2 vUv;
+						void main() {  gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0); }	`
+				});
+				return material;
+			}
+
 			//with plane geometry
 			function tarrain(gui){
 				const width = 50; // Width along the X axis. Default is 1.
@@ -198,6 +235,7 @@
 
 				// Define thresholds for each part of the heights
 				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.65, mid: 0.4};
+        // Add heights and colors
 				generateHill(geometry, thresholds);
 				
 				
@@ -207,6 +245,7 @@
 					vertexColors: true // Parameter to tell Material that there is an attribute 'color' in the geometry and use it
 				});
 				
+
 				const plane = new THREE.Mesh(geometry,material);
 				scene.add(plane);
 
