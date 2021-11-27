@@ -14,9 +14,10 @@
 			import {OrbitControls} from './js/OrbitControls.js';
 			import * as dat from './js/dat.gui/build/dat.gui.module.js'
 			var camera, scene, renderer, controls;
-			var gui = init();
+			var gui;
+			init();
 			map();
-			tarrain(gui);
+			tarrain();
 			render();
 			tick();
 
@@ -46,7 +47,7 @@
 			
 			function lightHandler(){
 				// Debug
-				const gui = new dat.GUI()
+				gui = new dat.GUI()
 				//pointlight
 				const light = new THREE.PointLight(0xffffff, 1);
 				light.position.set(20,20,20);
@@ -76,7 +77,7 @@
 				const lightFolder = gui.addFolder('light');
 
 				light.intensity = 0.01;
-				lightFolder.add(light, 'intensity', 0, 1, 0.01);
+				lightFolder.add(light, 'intensity', 0, 0.03, 0.0001);
 				lightFolder.add(light, 'distance', 0, 20).onChange(updateLight);
 				// Add light position and target position to GUI
 				const lightPositionFolder = addVec3ToGUI(lightFolder, light.position, 'position', updateLight);
@@ -95,7 +96,6 @@
 				// Set control center target to almost center of plane
 				controls.target.set(0, 2, 0);
 				controls.update();
-				return gui
 			}
 
 			//a line based grid, with the axes, for understanding visual results
@@ -198,33 +198,8 @@
 				}
 			}
 
-			function generateTexture(){
-				// const texture = new THREE.TextureLoader().load( 'img/Heightmap.png');
-				// return new THREE.MeshBasicMaterial( { map: texture } );
-
-				var material = new THREE.ShaderMaterial(
-				{
-					uniforms: {
-						color1: {value: new THREE.Color("red")},
-						color2: {value: new THREE.Color("purple")}
-					},
-					vertexShader: `
-						varying vec2 vUv;
-						void main() {
-						    vUv = uv;
-						    gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-						} `,
-					fragmentShader: `
-						uniform vec3 color1;
-						uniform vec3 color2;
-						varying vec2 vUv;
-						void main() {  gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0); }	`
-				});
-				return material;
-			}
-
 			//with plane geometry
-			function tarrain(gui){
+			function tarrain(){
 				const width = 50; // Width along the X axis. Default is 1.
 				const height = 50; // Height along the Y axis. Default is 1.
 				const widthSegments = 1000; // Optional. Default is 1.
@@ -235,7 +210,8 @@
 
 				// Define thresholds for each part of the heights
 				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.65, mid: 0.4};
-        // Add heights and colors
+        		
+				// Add heights and colors
 				generateHill(geometry, thresholds);
 				
 				
