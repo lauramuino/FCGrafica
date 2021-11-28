@@ -13,4 +13,4 @@ Luego, levantar el servidor usando
 Abrir `index.html`
 
 ## Links
-[Informe_FCG.pdf](Informe de este TP)
+[Informe de este TP](Informe_FCG.pdf)
