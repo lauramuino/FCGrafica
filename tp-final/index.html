@@ -170,22 +170,22 @@
 				for (var i=0; i < count; i++) {
 					var coordY = geometry.attributes.position.getY(i);
 					if (coordY >= midThreshold && higherMidThreshold >= coordY && thresholds.sections == 6) {
-						colors.setXYZ( i, 85, 65, 36 );
+						colors.setXYZ( i, 35, 144, 79 ); // Sea Green
 						// colors.setXYZ( i, 57, 82, 126 );
 					} else if (coordY >= higherMidThreshold && highThreshold >= coordY && thresholds.sections >= 5) {
-						colors.setXYZ( i, 85, 65, 36 );
+						colors.setXYZ( i, 85, 65, 36 ); // Liver [Dogs]
 						// colors.setXYZ( i, 204, 229, 251 );
 					} else if (coordY >= highThreshold && peakThreshold >= coordY && thresholds.sections >= 4) {
-						colors.setXYZ( i, 60, 37, 21 );
+						colors.setXYZ( i, 60, 37, 21 ); // Bistre
 						// colors.setXYZ( i, 157, 204, 250 );
 					} else if (coordY >= peakThreshold && thresholds.sections >= 3) {
-						colors.setXYZ( i, 255, 255, 255 );
+						colors.setXYZ( i, 255, 255, 255 ); // Snow
 						// colors.setXYZ( i, 68, 158, 244 );
 					} else if (coordY >= lowThreshold  && peakThreshold >= coordY && thresholds.sections >= 2) {
-						colors.setXYZ( i, 30, 196, 100 );
+						colors.setXYZ( i, 30, 196, 100 ); //  Crayola's Green
 						// colors.setXYZ( i, 120, 186, 249 );
 					} else {
-						colors.setXYZ( i, 36, 137, 204 );
+						colors.setXYZ( i, 36, 137, 204 ); // Water
 						// colors.setXYZ( i, 37, 60, 106 );
 					}
 				}
@@ -209,7 +209,7 @@
 				geometry.rotateX(Math.PI/2);
 
 				// Define thresholds for each part of the heights
-				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.65, mid: 0.4};
+				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.5, mid: 0.35};
         		
 				// Add heights and colors
 				generateHill(geometry, thresholds);
