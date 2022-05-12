@@ -10,271 +10,272 @@
 	<body>
 		<!-- todo: https://blog.mastermaps.com/2013/10/terrain-building-with-threejs.html implementar esto -->
 		<script src="./js/three.js"></script>
-		<script type="module">
-			import {OrbitControls} from './js/OrbitControls.js';
-			import * as dat from './js/dat.gui/build/dat.gui.module.js'
-			var camera, scene, renderer, controls;
-			var gui;
-			init();
-			map();
-			tarrain();
-			render();
-			tick();
-
-
-			function init(){
-				//setting camera
-				scene = new THREE.Scene();
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
-				camera.position.set(40,20,50);
-				camera.lookAt(scene.position);
-
-				//todo: dont remember what this is
-				renderer = new THREE.WebGLRenderer();
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
-
-				lightHandler();
-
-				//camera controls
-				controls = new OrbitControls(camera, renderer.domElement);
-				controls.addEventListener( 'change', render );
-				// Set control center target to almost center of plane
-				controls.target.set(0, 2, 0);
-				controls.update();
-			}
-
-			
-			function lightHandler(){
-				// Debug
-				gui = new dat.GUI()
-				//pointlight
-				const light = new THREE.PointLight(0xffffff, 1);
-				light.position.set(20,20,20);
-				light.castShadow = true;
-				scene.add(light);
-				// Add Lightning management helper
-				const helper = new THREE.PointLightHelper(light);
-				scene.add(helper);
-				
-				// function to update light helper
-				function updateLight() {
-					helper.update();
-				}
-				
-				// Add light and helper to GUI
-				function addVec3ToGUI(gui, vector3, name, onChangeFn) {
-					const folder = gui.addFolder(name);
-					folder.add(vector3, 'x', -50, 50).onChange(onChangeFn);
-					folder.add(vector3, 'y', 0, 30).onChange(onChangeFn);
-					folder.add(vector3, 'z', -50, 50).onChange(onChangeFn);
-					folder.open();
-					return folder
-				}
-				
-				// GUI management for lightning
-
-				const lightFolder = gui.addFolder('light');
-
-				light.intensity = 0.01;
-				lightFolder.add(light, 'intensity', 0, 0.03, 0.0001);
-				lightFolder.add(light, 'distance', 0, 20).onChange(updateLight);
-				// Add light position and target position to GUI
-				const lightPositionFolder = addVec3ToGUI(lightFolder, light.position, 'position', updateLight);
-
-				// Add color to light
-				const col = { color: '#FFFFFF' }
-				lightFolder.addColor(col, 'color').onChange(() => {
-					light.color.set(col.color)
-				})
-				lightFolder.open();
-
-
-				//camera controls
-				controls = new OrbitControls(camera, renderer.domElement);
-				controls.addEventListener( 'change', render );
-				// Set control center target to almost center of plane
-				controls.target.set(0, 2, 0);
-				controls.update();
-			}
-
-			//a line based grid, with the axes, for understanding visual results
-			function map(){
-				const size = 100;
-				const divisions = 100;
-				const gridHelper = new THREE.GridHelper(size, divisions);
-				scene.add(gridHelper);
-				
-				//The X axis is red, Y axis is green, Z axis is blue.
-				const axesHelper = new THREE.AxesHelper( 100 );
-				scene.add( axesHelper );
-			}
-			
-			function polarMapCoordenates(){
-				const polarHelper = new THREE.PolarGridHelper();
-				scene.add(polarHelper);
-			}
-			
-			// Generates a hill on the given geometry around the centerpoint
-			function generateHill(geometry, thresholds){
-				const count = geometry.attributes.position.count;
-				geometry.setAttribute('color', new THREE.BufferAttribute( new Float32Array(count *3 ), 3 ) );
-				var maxRadious = 5;
-				var radious = Math.random() * maxRadious + 1;
-				var totalMountains = 500;
-				// Keep track of min and max height for normalization
-				var max = Math.pow(maxRadious,2);
-				var min = 0;
-				var maxNormalized = 0;
-				// Choose random mountain center
-				for (var j=0; j < totalMountains; j++) {
-					var randomLocation = Math.floor(Math.random() * count);
-					var centerX = geometry.attributes.position.array[3*randomLocation];
-					var centerZ = geometry.attributes.position.array[3*randomLocation+2];
-					// Calculate height for points inside the radious (other points are 0)
-					for (var i=0; i < count; i++) {
-						var coordX = geometry.attributes.position.array[3*i+0];
-						var coordZ = geometry.attributes.position.array[3*i+2];
-						var y = Math.max(Math.pow(radious,2) - (Math.pow((coordX - centerX),2) + Math.pow((coordZ - centerZ),2)),0)
-						if (y > max) {
-							max = y;
-						}
-						geometry.attributes.position.array[3*i+1] += (y - min)/(max-min);;
-						if (geometry.attributes.position.getY(i) > maxNormalized) {
-							maxNormalized = geometry.attributes.position.getY(i);
-						}
-					}
-				}
-				
-				// Add colors to each vertex by defining a threshold from the max height
-				updateGeoColors(geometry, thresholds)
-			}
-
-			function updateGeoColors(geometry, thresholds) {
-				const count = geometry.attributes.position.count;
-				const colors = geometry.attributes.color;
-				var maxNormalized = 0;
-				// calculate maxheight
-				for (var i=0; i < count; i++) {
-					if (geometry.attributes.position.getY(i) > maxNormalized) {
-						maxNormalized = geometry.attributes.position.getY(i);
-					}
-				}
-
-				// update colors
-				var peakThreshold = maxNormalized * thresholds.peak;
-				var lowThreshold = maxNormalized * thresholds.low;
-				var highThreshold = maxNormalized * thresholds.high;
-				var higherMidThreshold = maxNormalized * thresholds.highMid;
-				var midThreshold = maxNormalized * thresholds.mid;
-				for (var i=0; i < count; i++) {
-					var coordY = geometry.attributes.position.getY(i);
-					if (coordY >= midThreshold && higherMidThreshold >= coordY && thresholds.sections == 6) {
-						colors.setXYZ( i, 35, 144, 79 ); // Sea Green
-						// colors.setXYZ( i, 57, 82, 126 );
-					} else if (coordY >= higherMidThreshold && highThreshold >= coordY && thresholds.sections >= 5) {
-						colors.setXYZ( i, 85, 65, 36 ); // Liver [Dogs]
-						// colors.setXYZ( i, 204, 229, 251 );
-					} else if (coordY >= highThreshold && peakThreshold >= coordY && thresholds.sections >= 4) {
-						colors.setXYZ( i, 60, 37, 21 ); // Bistre
-						// colors.setXYZ( i, 157, 204, 250 );
-					} else if (coordY >= peakThreshold && thresholds.sections >= 3) {
-						colors.setXYZ( i, 255, 255, 255 ); // Snow
-						// colors.setXYZ( i, 68, 158, 244 );
-					} else if (coordY >= lowThreshold  && peakThreshold >= coordY && thresholds.sections >= 2) {
-						colors.setXYZ( i, 30, 196, 100 ); //  Crayola's Green
-						// colors.setXYZ( i, 120, 186, 249 );
-					} else {
-						colors.setXYZ( i, 36, 137, 204 ); // Water
-						// colors.setXYZ( i, 37, 60, 106 );
-					}
-				}
-			}
-
-			// Generates random heights
-			function addRandomHeights(geometry) {
-				for (var i=0; i <geometry.attributes.position.count; i++) {
-					geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5); 
-				}
-			}
-
-			//with plane geometry
-			function tarrain(){
-				const width = 50; // Width along the X axis. Default is 1.
-				const height = 50; // Height along the Y axis. Default is 1.
-				const widthSegments = 1000; // Optional. Default is 1.
-				const heightSegments = 1000; // Optional. Default is 1. 
-
-				const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
-				geometry.rotateX(Math.PI/2);
-
-				// Define thresholds for each part of the heights
-				var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.5, mid: 0.35};
-        		
-				// Add heights and colors
-				generateHill(geometry, thresholds);
-				
-				
-				// const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
-				var material = new THREE.MeshPhongMaterial({
-					side: THREE.DoubleSide,
-					vertexColors: true // Parameter to tell Material that there is an attribute 'color' in the geometry and use it
-				});
-				
-
-				const plane = new THREE.Mesh(geometry,material);
-				scene.add(plane);
-
-				function updatePeakThreshold(plane) {
-					return function(event) {
-						thresholds.peak = event;
-						updateGeoColors(plane.geometry, thresholds);
-						plane.geometry.attributes.color.needsUpdate = true;
-					}
-				}
-
-				function updateLowThreshold(plane) {
-					return function(event) {
-						thresholds.low = event;
-						updateGeoColors(plane.geometry, thresholds);
-						plane.geometry.attributes.color.needsUpdate = true;
-					}
-				}
-
-				function updateThresholdSections(plane) {
-					return function(event) {
-						thresholds.sections = event;
-						updateGeoColors(plane.geometry, thresholds);
-						plane.geometry.attributes.color.needsUpdate = true;
-					}
-				}
-
-				gui.add(thresholds, 'peak', 0.01, 1, 0.01).onChange(updatePeakThreshold(plane));
-				gui.add(thresholds, 'low', 0.01, 1, 0.01).onChange(updateLowThreshold(plane));
-				gui.add(thresholds, 'sections', 1, 6, 1).onChange(updateThresholdSections(plane));
-			}
-
-			function render(){
-				renderer.render(scene, camera);
-			}
-
-			function tick() {
-
-				// Update Orbital Controls
-				controls.update()
-
-				// Render
-				renderer.render(scene, camera)
-
-				// Call tick again on the next frame
-				window.requestAnimationFrame(tick)
-			}
-
-			// Lineal interpolation between a and b
-			function lerp(a, b, n) {
-				return (1 - n) * a + n * b;
-			}
-
-		</script>
 	</body>
 </html>
+
+
+<script type="module">
+	import {OrbitControls} from './js/OrbitControls.js';
+	import * as dat from './js/dat.gui/build/dat.gui.module.js'
+	var camera, scene, renderer, controls;
+	var gui;
+	init();
+	map();
+	tarrain();
+	render();
+	tick();
+
+
+	function init(){
+		//setting camera
+		scene = new THREE.Scene();
+		camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+		camera.position.set(40,20,50);
+		camera.lookAt(scene.position);
+
+		//setting window size
+		renderer = new THREE.WebGLRenderer();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		document.body.appendChild( renderer.domElement );
+
+		//adding control panel
+		gui = new dat.GUI()
+
+		lightHandler();
+
+		//camera controls
+		controls = new OrbitControls(camera, renderer.domElement);
+		controls.addEventListener( 'change', render );
+		// Set control center target to almost center of plane
+		controls.target.set(0, 2, 0);
+		controls.update();
+	}
+
+
+	function lightHandler(){
+
+		pointLightHandler();
+
+		//camera controls
+		controls = new OrbitControls(camera, renderer.domElement);
+		controls.addEventListener( 'change', render );
+		// Set control center target to almost center of plane
+		controls.target.set(0, 2, 0);
+		controls.update();
+	}
+
+	//function that creates and sets all related to this light
+	function pointLightHandler() {
+		//create light and add it to scene
+		const pointLight = new THREE.PointLight(0xFFFFFF, 1);  //color and intensity
+		pointLight.position.set(20, 20, 20);
+		pointLight.distance = 0.0;
+		pointLight.intensity = 0.01;
+		pointLight.castShadow = true;
+		scene.add(pointLight);
+
+		// Add pointLight visual object
+		const helper = new THREE.PointLightHelper(pointLight);
+		scene.add(helper);
+
+		// function to update light helper
+		function updateLight() {
+			helper.update();
+		}
+
+		//create and add light controls to gui
+		const lightFolder = gui.addFolder('Point Light');
+		lightFolder.add(pointLight, 'intensity', 0.0, 0.1, 0.01);  //todo: por que las intensidades se van tan al carajo con numeros bajos?!
+		lightFolder.add(pointLight, 'distance', 0, 100, 10);
+		const colorParam = { color: '#FFFFFF' }
+		lightFolder.addColor(colorParam, 'color').onChange(() => {
+			pointLight.color.set(colorParam.color)
+		})
+
+		// Add light position and target position to GUI
+		lightFolder.add(pointLight.position, 'x', -50, 50).onChange(updateLight);
+		lightFolder.add(pointLight.position, 'y', 0, 30).onChange(updateLight);
+		lightFolder.add(pointLight.position, 'z', -50, 50).onChange(updateLight);
+
+		//folder opened by default
+		lightFolder.open();
+	}
+
+	//a line based grid, with the axes, for understanding visual results
+	function map(){
+		const size = 100;
+		const divisions = 100;
+		const gridHelper = new THREE.GridHelper(size, divisions);
+		scene.add(gridHelper);
+
+		//The X axis is red, Y axis is green, Z axis is blue.
+		const axesHelper = new THREE.AxesHelper( 100 );
+		scene.add( axesHelper );
+	}
+
+	function polarMapCoordenates(){
+		const polarHelper = new THREE.PolarGridHelper();
+		scene.add(polarHelper);
+	}
+
+	// Generates a hill on the given geometry around the centerpoint
+	function generateHill(geometry, thresholds){
+		const count = geometry.attributes.position.count;
+		geometry.setAttribute('color', new THREE.BufferAttribute( new Float32Array(count *3 ), 3 ) );
+		var maxRadious = 5;
+		var radious = Math.random() * maxRadious + 1;
+		var totalMountains = 500;
+		// Keep track of min and max height for normalization
+		var max = Math.pow(maxRadious,2);
+		var min = 0;
+		var maxNormalized = 0;
+		// Choose random mountain center
+		for (var j=0; j < totalMountains; j++) {
+			var randomLocation = Math.floor(Math.random() * count);
+			var centerX = geometry.attributes.position.array[3*randomLocation];
+			var centerZ = geometry.attributes.position.array[3*randomLocation+2];
+			// Calculate height for points inside the radious (other points are 0)
+			for (var i=0; i < count; i++) {
+				var coordX = geometry.attributes.position.array[3*i+0];
+				var coordZ = geometry.attributes.position.array[3*i+2];
+				var y = Math.max(Math.pow(radious,2) - (Math.pow((coordX - centerX),2) + Math.pow((coordZ - centerZ),2)),0)
+				if (y > max) {
+					max = y;
+				}
+				geometry.attributes.position.array[3*i+1] += (y - min)/(max-min);;
+				if (geometry.attributes.position.getY(i) > maxNormalized) {
+					maxNormalized = geometry.attributes.position.getY(i);
+				}
+			}
+		}
+
+		// Add colors to each vertex by defining a threshold from the max height
+		updateGeoColors(geometry, thresholds)
+	}
+
+	function updateGeoColors(geometry, thresholds) {
+		const count = geometry.attributes.position.count;
+		const colors = geometry.attributes.color;
+		var maxNormalized = 0;
+		// calculate maxheight
+		for (var i=0; i < count; i++) {
+			if (geometry.attributes.position.getY(i) > maxNormalized) {
+				maxNormalized = geometry.attributes.position.getY(i);
+			}
+		}
+
+		// update colors
+		var peakThreshold = maxNormalized * thresholds.peak;
+		var lowThreshold = maxNormalized * thresholds.low;
+		var highThreshold = maxNormalized * thresholds.high;
+		var higherMidThreshold = maxNormalized * thresholds.highMid;
+		var midThreshold = maxNormalized * thresholds.mid;
+		for (var i=0; i < count; i++) {
+			var coordY = geometry.attributes.position.getY(i);
+			if (coordY >= midThreshold && higherMidThreshold >= coordY && thresholds.sections == 6) {
+				colors.setXYZ( i, 35, 144, 79 ); // Sea Green
+				// colors.setXYZ( i, 57, 82, 126 );
+			} else if (coordY >= higherMidThreshold && highThreshold >= coordY && thresholds.sections >= 5) {
+				colors.setXYZ( i, 85, 65, 36 ); // Liver [Dogs]
+				// colors.setXYZ( i, 204, 229, 251 );
+			} else if (coordY >= highThreshold && peakThreshold >= coordY && thresholds.sections >= 4) {
+				colors.setXYZ( i, 60, 37, 21 ); // Bistre
+				// colors.setXYZ( i, 157, 204, 250 );
+			} else if (coordY >= peakThreshold && thresholds.sections >= 3) {
+				colors.setXYZ( i, 255, 255, 255 ); // Snow
+				// colors.setXYZ( i, 68, 158, 244 );
+			} else if (coordY >= lowThreshold  && peakThreshold >= coordY && thresholds.sections >= 2) {
+				colors.setXYZ( i, 30, 196, 100 ); //  Crayola's Green
+				// colors.setXYZ( i, 120, 186, 249 );
+			} else {
+				colors.setXYZ( i, 36, 137, 204 ); // Water
+				// colors.setXYZ( i, 37, 60, 106 );
+			}
+		}
+	}
+
+	// Generates random heights
+	function addRandomHeights(geometry) {
+		for (var i=0; i <geometry.attributes.position.count; i++) {
+			geometry.attributes.position.array[3*i+1] = Math.floor(Math.random() *5);
+		}
+	}
+
+	//with plane geometry
+	function tarrain(){
+		const width = 50; // Width along the X axis. Default is 1.
+		const height = 50; // Height along the Y axis. Default is 1.
+		const widthSegments = 1000; // Optional. Default is 1.
+		const heightSegments = 1000; // Optional. Default is 1.
+
+		const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
+		geometry.rotateX(Math.PI/2);
+
+		// Define thresholds for each part of the heights
+		var thresholds = {sections: 6, peak: 0.95, low: 0.2, high: 0.7, highMid: 0.5, mid: 0.35};
+
+		// Add heights and colors
+		generateHill(geometry, thresholds);
+
+
+		// const material = new THREE.MeshStandardMaterial({color:'white', side: THREE.DoubleSide});
+		var material = new THREE.MeshPhongMaterial({
+			side: THREE.DoubleSide,
+			vertexColors: true // Parameter to tell Material that there is an attribute 'color' in the geometry and use it
+		});
+
+
+		const plane = new THREE.Mesh(geometry,material);
+		scene.add(plane);
+
+		function updatePeakThreshold(plane) {
+			return function(event) {
+				thresholds.peak = event;
+				updateGeoColors(plane.geometry, thresholds);
+				plane.geometry.attributes.color.needsUpdate = true;
+			}
+		}
+
+		function updateLowThreshold(plane) {
+			return function(event) {
+				thresholds.low = event;
+				updateGeoColors(plane.geometry, thresholds);
+				plane.geometry.attributes.color.needsUpdate = true;
+			}
+		}
+
+		function updateThresholdSections(plane) {
+			return function(event) {
+				thresholds.sections = event;
+				updateGeoColors(plane.geometry, thresholds);
+				plane.geometry.attributes.color.needsUpdate = true;
+			}
+		}
+
+		gui.add(thresholds, 'peak', 0.01, 1, 0.01).onChange(updatePeakThreshold(plane));
+		gui.add(thresholds, 'low', 0.01, 1, 0.01).onChange(updateLowThreshold(plane));
+		gui.add(thresholds, 'sections', 1, 6, 1).onChange(updateThresholdSections(plane));
+	}
+
+	function render(){
+		renderer.render(scene, camera);
+	}
+
+	function tick() {
+
+		// Update Orbital Controls
+		controls.update()
+
+		// Render
+		renderer.render(scene, camera)
+
+		// Call tick again on the next frame
+		window.requestAnimationFrame(tick)
+	}
+
+	// Lineal interpolation between a and b
+	function lerp(a, b, n) {
+		return (1 - n) * a + n * b;
+	}
+
+</script>
