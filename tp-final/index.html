@@ -56,12 +56,6 @@
 
 		pointLightHandler();
 
-		//camera controls
-		controls = new OrbitControls(camera, renderer.domElement);
-		controls.addEventListener( 'change', render );
-		// Set control center target to almost center of plane
-		controls.target.set(0, 2, 0);
-		controls.update();
 	}
 
 	//function that creates and sets all related to this light
