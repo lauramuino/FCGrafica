@@ -54,7 +54,8 @@
 
 	function lightHandler(){
 
-		pointLightHandler();
+		// pointLightHandler();
+		spotLightHandler();
 
 	}
 
@@ -88,10 +89,60 @@
 
 		// Add light position and target position to GUI
 		lightFolder.add(pointLight.position, 'x', -50, 50).onChange(updateLight);
-		lightFolder.add(pointLight.position, 'y', 0, 30).onChange(updateLight);
+		lightFolder.add(pointLight.position, 'y', 0, 100).onChange(updateLight);
 		lightFolder.add(pointLight.position, 'z', -50, 50).onChange(updateLight);
 
 		//folder opened by default
+		// lightFolder.open();
+	}
+
+	//function that creates and sets all related to this light
+	function spotLightHandler() {
+		//create light and add it to scene
+		const spotLight = new THREE.SpotLight(0xFFFFFF);
+		spotLight.intensity = 0.01;
+		spotLight.position.set( 15, 40, 35 );
+		spotLight.angle = Math.PI / 4;
+		spotLight.penumbra = 0.1;
+		spotLight.decay = 2;
+		spotLight.distance = 100;
+		// spotLight.castShadow = true;
+		// spotLight.shadow.mapSize.width = 1024;
+		// spotLight.shadow.mapSize.height = 1024;
+		// spotLight.shadow.camera.near = 500;
+		// spotLight.shadow.camera.far = 4000;
+		// spotLight.shadow.camera.fov = 30;
+		// spotLight.castShadow = true;
+		scene.add(spotLight);
+
+		//default is (0,0,0), this must be done in order to change it
+		scene.add(spotLight.target);
+
+		// Add pointLight visual object
+		const sphereSize = 1;
+		const helper = new THREE.SpotLightHelper(spotLight, sphereSize);
+		helper.color = 0xFFFFFF;
+		scene.add(helper);
+
+		// function to update light helper
+		function updateLight() {
+			helper.update();
+		}
+
+		//create and add light controls to gui
+		const lightFolder = gui.addFolder('Spot Light');
+		// lightFolder.add(spotLight, "castShadow");
+		lightFolder.add(spotLight, 'distance', 0, 100).onChange(updateLight); //only spotlight has this property https://www.youtube.com/watch?v=T6PhV4Hz0u4
+		lightFolder.add(spotLight, "intensity", 0, 1, 0.001);
+		lightFolder.add(spotLight, 'penumbra', 0.0, 1.0, 0.1);
+		lightFolder.add(spotLight, "decay", 1, 2, 0.1);
+		lightFolder.add(spotLight, "angle", 0, Math.PI/2, 0.001).onChange(updateLight);
+		const colorParam = { color: '#FFFFFF' }
+		lightFolder.addColor(colorParam, 'color').onChange(() => {
+			spotLight.color.set(colorParam.color)
+		})
+
+		// //folder opened by default
 		lightFolder.open();
 	}
 
